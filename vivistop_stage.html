@@ -659,21 +659,33 @@
 
   // ── FETCH FROM GOOGLE SHEETS (public CSV export) ──
   async function fetchData() {
-    if (CONFIG.SHEET_ID === '1sUX2ODd4-o7qDHyRbPkEU5VAkjBEvkON4ZVwd0BpN0Q') {
-      document.getElementById('config-notice').style.display = 'block';
+    if (CONFIG.SHEET_ID === 'YOUR_SHEET_ID_HERE') {
+      showNotice('⚠ スプレッドシートIDを設定してください');
       return fillFreeSlots(CONFIG.FALLBACK_DATA);
     }
 
     try {
       const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('fetch failed');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
+      // Googleがエラーレスポンスを返す場合（シート名が違うなど）
+      if (text.includes('google.visualization.Query.setResponse') && text.includes('error')) {
+        throw new Error('シート名が見つかりません');
+      }
+      document.getElementById('config-notice').style.display = 'none';
       return fillFreeSlots(parseCSV(text));
     } catch (e) {
-      console.warn('Sheets fetch failed, using fallback:', e);
+      console.warn('Sheets fetch failed:', e.message);
+      showNotice(`⚠ データ取得失敗: ${e.message} — フォールバックデータを表示中`);
       return fillFreeSlots(CONFIG.FALLBACK_DATA);
     }
+  }
+
+  function showNotice(msg) {
+    const el = document.getElementById('config-notice');
+    el.textContent = msg;
+    el.style.display = 'block';
   }
 
   function parseCSV(text) {

@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>VIVISTOP OPEN STAGE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── VIVITA Font face (use if vivita-font files are placed in same folder) ── */
+    /* @font-face {
+      font-family: 'VIVITA';
+      src: url('vivita-font.woff2') format('woff2');
+    } */
+
+    :root {
+      --vivita-yellow: #FFE600;
+      --vivita-pink:   #FF3CAC;
+      --vivita-cyan:   #00F5FF;
+      --vivita-green:  #39FF14;
+      --bg-dark:       #0A0A0F;
+      --bg-panel:      #12121A;
+      --bg-card:       #1C1C28;
+      --text-main:     #FFFFFF;
+      --text-muted:    #888899;
+      --border:        rgba(255,255,255,0.08);
+      --font-display:  'Bebas Neue', 'Black Han Sans', sans-serif;
+      --font-body:     'Noto Sans JP', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1920px; height: 1080px;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* ── SCANLINE EFFECT ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* ════════════════ LAYOUT ════════════════ */
+    #app {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 520px 1fr;
+      width: 1920px; height: 1080px;
+    }
+
+    /* ════════════════ LEFT PANEL ════════════════ */
+    #left {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 36px 40px 48px;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* BG glow */
+    #left::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: -200px;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(255,230,0,0.12) 0%, transparent 70%);
+      animation: pulse 6s ease-in-out infinite;
+    }
+    #left::after {
+      content: '';
+      position: absolute;
+      bottom: -150px; right: -100px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,60,172,0.10) 0%, transparent 70%);
+      animation: pulse 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.15); opacity: 0.7; }
+    }
+
+    /* ── TOP: EVENT TITLE ── */
+    #title-area {
+      position: relative; z-index: 2;
+    }
+
+    .label-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--vivita-yellow);
+      color: #000;
+      font-family: var(--font-body);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      padding: 6px 14px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .label-tag .dot {
+      width: 8px; height: 8px;
+      background: #000;
+      border-radius: 50%;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .event-title {
+      font-family: var(--font-display);
+      font-size: 76px;
+      line-height: 0.92;
+      letter-spacing: 0.02em;
+      color: var(--text-main);
+      text-transform: uppercase;
+    }
+
+    .event-title .highlight {
+      display: block;
+      color: var(--vivita-yellow);
+      -webkit-text-stroke: 0px;
+      text-shadow:
+        0 0 40px rgba(255,230,0,0.6),
+        0 0 80px rgba(255,230,0,0.3);
+    }
+
+    .event-sub {
+      margin-top: 20px;
+      font-size: 15px;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* decorative line */
+    .deco-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .deco-line span { flex: 1; height: 1px; background: linear-gradient(90deg, var(--vivita-yellow), transparent); }
+    .deco-line i { width: 6px; height: 6px; background: var(--vivita-yellow); transform: rotate(45deg); }
+
+    /* ── MIDDLE: RECRUIT BANNER ── */
+    #recruit-banner {
+      position: relative; z-index: 2;
+      border: 2px solid var(--vivita-pink);
+      padding: 18px 20px;
+      background: rgba(255,60,172,0.07);
+      box-shadow: 0 0 30px rgba(255,60,172,0.15), inset 0 0 30px rgba(255,60,172,0.05);
+    }
+
+    .recruit-label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--vivita-pink);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .recruit-label::before {
+      content: '';
+      width: 18px; height: 2px;
+      background: var(--vivita-pink);
+    }
+
+    .recruit-main {
+      font-family: var(--font-display);
+      font-size: 52px;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(255,60,172,0.5);
+    }
+
+    .recruit-sub {
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.08em;
+    }
+
+    .recruit-pulse {
+      display: inline-block;
+      width: 10px; height: 10px;
+      background: var(--vivita-pink);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    /* ── BOTTOM: NOW PLAYING ── */
+    #now-playing {
+      position: relative; z-index: 2;
+    }
+
+    .now-label {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--vivita-cyan);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .now-label::before {
+      content: '';
+      width: 24px; height: 2px;
+      background: var(--vivita-cyan);
+    }
+
+    .now-title {
+      font-family: var(--font-display);
+      font-size: 46px;
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+      color: #fff;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .now-time-badge {
+      display: inline-block;
+      margin-top: 14px;
+      background: var(--vivita-cyan);
+      color: #000;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      padding: 5px 14px;
+    }
+
+    .progress-bar-wrap {
+      margin-top: 18px;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--vivita-cyan), var(--vivita-pink));
+      border-radius: 2px;
+      transition: width 30s linear;
+    }
+
+    /* CLOCK */
+    #clock {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* ════════════════ RIGHT PANEL ════════════════ */
+    #right {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 56px 40px 48px;
+      overflow: hidden;
+    }
+
+    #right-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .timetable-heading {
+      font-family: var(--font-display);
+      font-size: 32px;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .stage-badges {
+      display: flex;
+      gap: 10px;
+    }
+
+    .stage-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 4px 12px;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .badge-main     { background: rgba(255,230,0,0.15);   color: var(--vivita-yellow); border: 1px solid rgba(255,230,0,0.4); }
+    .badge-workshop { background: rgba(57,255,20,0.12);   color: var(--vivita-green);  border: 1px solid rgba(57,255,20,0.4); }
+    .badge-talk     { background: rgba(255,60,172,0.12);  color: var(--vivita-pink);   border: 1px solid rgba(255,60,172,0.4); }
+
+    /* ── TIMETABLE GRID ── */
+    #timetable-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #timetable {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tt-row {
+      display: grid;
+      grid-template-columns: 130px 1fr auto;
+      align-items: center;
+      gap: 20px;
+      padding: 18px 24px;
+      background: var(--bg-card);
+      border-left: 4px solid transparent;
+      border-radius: 2px;
+      transition: all 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tt-row::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, transparent 60%);
+    }
+
+    .tt-row.active {
+      border-left-color: var(--vivita-cyan);
+      background: linear-gradient(90deg, rgba(0,245,255,0.08) 0%, var(--bg-card) 100%);
+      box-shadow: 0 0 20px rgba(0,245,255,0.08);
+    }
+
+    .tt-row.past {
+      opacity: 0.35;
+    }
+
+    .tt-row.stage-MAIN     { border-left-color: var(--vivita-yellow); }
+    .tt-row.stage-WORKSHOP { border-left-color: var(--vivita-green); }
+    .tt-row.stage-TALK     { border-left-color: var(--vivita-pink); }
+    .tt-row.stage-FREE     { border-left-color: rgba(255,255,255,0.3); border-left-style: dashed; }
+    .tt-row.active.stage-MAIN     { background: linear-gradient(90deg, rgba(255,230,0,0.06) 0%, var(--bg-card) 100%); box-shadow: 0 0 20px rgba(255,230,0,0.06); }
+    .tt-row.active.stage-WORKSHOP { background: linear-gradient(90deg, rgba(57,255,20,0.06) 0%, var(--bg-card) 100%); box-shadow: 0 0 20px rgba(57,255,20,0.06); }
+    .tt-row.active.stage-TALK     { background: linear-gradient(90deg, rgba(255,60,172,0.06) 0%, var(--bg-card) 100%); box-shadow: 0 0 20px rgba(255,60,172,0.06); }
+    .tt-row.active.stage-FREE     { background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, var(--bg-card) 100%); box-shadow: none; border-left-color: #fff; }
+
+    .tt-time {
+      font-family: var(--font-display);
+      font-size: 30px;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .tt-row.active .tt-time { color: #fff; }
+
+    .tt-content {}
+
+    .tt-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tt-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tt-badge {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 5px 14px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .tt-badge.MAIN     { background: rgba(255,230,0,0.15);   color: var(--vivita-yellow); }
+    .tt-badge.WORKSHOP { background: rgba(57,255,20,0.12);   color: var(--vivita-green); }
+    .tt-badge.TALK     { background: rgba(255,60,172,0.12);  color: var(--vivita-pink); }
+    .tt-badge.FREE     { background: rgba(255,255,255,0.10); color: #fff; }
+    .tt-badge.ーー     { display: none; }
+
+    /* NOW indicator */
+    .now-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: var(--vivita-cyan);
+      text-transform: uppercase;
+    }
+    .now-indicator .pip {
+      width: 6px; height: 6px;
+      background: var(--vivita-cyan);
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+    .tt-row.active .now-indicator { display: flex; }
+
+    /* SCROLLING TIMETABLE */
+    #timetable-scroll {
+      animation: scroll-up 60s linear infinite;
+    }
+
+    @keyframes scroll-up {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+
+    /* ── CONFIG ERROR ── */
+    #config-notice {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,60,172,0.9);
+      color: #fff;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      border-radius: 4px;
+      z-index: 9999;
+      display: none;
+    }
+
+    /* ── CORNER DECORATIONS ── */
+    .corner {
+      position: absolute;
+      width: 24px; height: 24px;
+      border-color: var(--vivita-yellow);
+      border-style: solid;
+      opacity: 0.4;
+    }
+    .corner-tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
+    .corner-tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; }
+    .corner-bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px; }
+    .corner-br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+
+    /* ── BOTTOM TICKER ── */
+    #ticker {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 36px;
+      background: var(--vivita-yellow);
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      z-index: 100;
+    }
+
+    #ticker-label {
+      flex-shrink: 0;
+      background: #000;
+      color: var(--vivita-yellow);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0 20px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    #ticker-track {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 40s linear infinite;
+    }
+
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      color: #000;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      padding: 0 48px;
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .ticker-item::after {
+      content: '✦';
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ CORNER DECORATIONS ════ -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- ════ MAIN APP ════ -->
+<div id="app">
+
+  <!-- ════ LEFT PANEL ════ -->
+  <div id="left">
+    <!-- TOP: EVENT TITLE -->
+    <div id="title-area">
+      <div class="label-tag"><span class="dot"></span> Live Event</div>
+      <h1 class="event-title">
+        VIVISTOP
+        <span class="highlight">OPEN<br>STAGE</span>
+      </h1>
+      <p class="event-sub">Creative Festival ― Youth &amp; Technology</p>
+      <div class="deco-line"><span></span><i></i></div>
+    </div>
+
+    <!-- MIDDLE: RECRUIT BANNER -->
+    <div id="recruit-banner">
+      <div class="recruit-label">Open Stage</div>
+      <div class="recruit-main">出演者募集中！</div>
+      <div class="recruit-sub"><span class="recruit-pulse"></span>飛び入り出演大歓迎　どなたでも参加できます</div>
+    </div>
+
+    <!-- BOTTOM: NOW PLAYING -->
+    <div id="now-playing">
+      <div id="clock">--:--</div>
+      <div class="now-label">Now On Stage</div>
+      <div class="now-title" id="now-title">Loading...</div>
+      <div id="now-time-badge" class="now-time-badge">--:-- ─ --:--</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ RIGHT PANEL ════ -->
+  <div id="right">
+    <div id="right-header">
+      <div class="timetable-heading">Timetable</div>
+      <div class="stage-badges">
+        <span class="stage-badge badge-main">Main</span>
+        <span class="stage-badge badge-workshop">Workshop</span>
+        <span class="stage-badge badge-talk">Talk</span>
+      </div>
+    </div>
+
+    <div id="timetable-wrap">
+      <div id="timetable"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════ BOTTOM TICKER ════ -->
+<div id="ticker">
+  <div id="ticker-label">INFO</div>
+  <div id="ticker-track"></div>
+</div>
+
+<!-- ════ CONFIG NOTICE ════ -->
+<div id="config-notice">⚠ スプレッドシートID・シート名を設定してください</div>
+
+<script>
+  // ══════════════════════════════════════════════
+  //  ★ CONFIG — ここを編集してください ★
+  // ══════════════════════════════════════════════
+  const CONFIG = {
+    // GoogleスプレッドシートのID（URLの /d/ と /edit の間の文字列）
+    SHEET_ID: '1sUX2ODd4-o7qDHyRbPkEU5VAkjBEvkON4ZVwd0BpN0Q',
+
+    // シート名（タブ名）
+    SHEET_NAME: 'Sheet1',
+
+    // データ更新間隔（ミリ秒）
+    REFRESH_INTERVAL: 60000,
+
+    // タイムテーブルのスクロール速度（px/sec、0でスクロールなし）
+    SCROLL_SPEED: 40,
+
+    // イベント時間帯
+    EVENT_START: '13:00',
+    EVENT_END:   '16:00',
+
+    // フォールバックデータ（スプレッドシートが未設定の場合に使用）
+    FALLBACK_DATA: [
+      { start: '13:00', end: '13:30', title: 'オープニングセレモニー', description: 'イベント開幕！スタッフによるオープニングトーク', stage: 'MAIN' },
+      { start: '13:30', end: '14:15', title: 'ワークショップ：電子工作入門', description: '初心者向けLEDアート制作体験', stage: 'WORKSHOP' },
+      { start: '14:15', end: '14:45', title: 'パフォーマンス：ダンスショー', description: '地域ユースグループによるダンスパフォーマンス', stage: 'MAIN' },
+      { start: '15:00', end: '15:30', title: 'トーク：テクノロジーと未来', description: 'ゲストスピーカーによる特別講演', stage: 'TALK' },
+      { start: '15:30', end: '16:00', title: 'ファイナルパフォーマンス', description: '全員参加のクロージングステージ', stage: 'MAIN' },
+    ]
+  };
+  // ══════════════════════════════════════════════
+
+  let timetableData = [];
+
+  // ── TIME HELPERS ──
+  function toMinutes(str) {
+    const [h, m] = str.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function nowMinutes() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  }
+
+  function formatTime(str) { return str; }
+
+  // ── FETCH FROM GOOGLE SHEETS (public CSV export) ──
+  async function fetchData() {
+    if (CONFIG.SHEET_ID === 'YOUR_SHEET_ID_HERE') {
+      document.getElementById('config-notice').style.display = 'block';
+      return fillFreeSlots(CONFIG.FALLBACK_DATA);
+    }
+
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('fetch failed');
+      const text = await res.text();
+      return fillFreeSlots(parseCSV(text));
+    } catch (e) {
+      console.warn('Sheets fetch failed, using fallback:', e);
+      return fillFreeSlots(CONFIG.FALLBACK_DATA);
+    }
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    // skip header row
+    return lines.slice(1).map(line => {
+      const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+      return {
+        start:       cols[0] || '',
+        end:         cols[1] || '',
+        title:       cols[2] || '',
+        description: cols[3] || '',
+        stage:       (cols[4] || '').toUpperCase(),
+      };
+    }).filter(r => r.start && r.title);
+  }
+
+  // ── 空き時間を「？？」スロットで埋める ──
+  function fillFreeSlots(data) {
+    const eventStart = toMinutes(CONFIG.EVENT_START);
+    const eventEnd   = toMinutes(CONFIG.EVENT_END);
+
+    // イベント時間外のコマを除外し、時系列にソート
+    const sorted = data
+      .filter(d => toMinutes(d.start) >= eventStart && toMinutes(d.end) <= eventEnd)
+      .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+
+    const result = [];
+    let cursor = eventStart;
+
+    for (const item of sorted) {
+      const s = toMinutes(item.start);
+      if (s > cursor) {
+        // 空き時間を検出 → 解放スロットを挿入
+        result.push({
+          start:       minutesToStr(cursor),
+          end:         minutesToStr(s),
+          title:       '？？',
+          description: '出演者募集中！',
+          stage:       'FREE',
+        });
+      }
+      result.push(item);
+      cursor = toMinutes(item.end);
+    }
+
+    // 最後のコマ〜イベント終了まで空きがあれば
+    if (cursor < eventEnd) {
+      result.push({
+        start:       minutesToStr(cursor),
+        end:         minutesToStr(eventEnd),
+        title:       '？？',
+        description: '出演者募集中！',
+        stage:       'FREE',
+      });
+    }
+
+    return result;
+  }
+
+  function minutesToStr(min) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+
+  // ── RENDER TIMETABLE ──
+  function renderTimetable(data) {
+    const wrap = document.getElementById('timetable');
+    const now = nowMinutes();
+
+    // duplicate for seamless scroll
+    const items = [...data, ...data];
+
+    wrap.innerHTML = items.map((item, i) => {
+      const s = toMinutes(item.start);
+      const e = toMinutes(item.end);
+      const isActive = now >= s && now < e;
+      const isPast   = now >= e;
+      const cls = [
+        'tt-row',
+        `stage-${item.stage}`,
+        isActive ? 'active' : '',
+        isPast   ? 'past'   : '',
+      ].join(' ');
+
+      return `
+        <div class="${cls}" data-index="${i}">
+          <div class="tt-time">${item.start}</div>
+          <div class="tt-content">
+            <div class="tt-title">${item.title}</div>
+            <div class="tt-desc">${item.description}</div>
+            <div class="now-indicator"><span class="pip"></span>ON AIR</div>
+          </div>
+          <div>
+            <span class="tt-badge ${item.stage}">${item.stage === 'FREE' ? 'FREE' : item.stage !== 'ーー' ? item.stage : ''}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    // setup scroll
+    const totalH = wrap.scrollHeight / 2;
+    const duration = totalH / CONFIG.SCROLL_SPEED;
+    if (CONFIG.SCROLL_SPEED > 0 && data.length > 6) {
+      wrap.style.animation = `scroll-up ${duration}s linear infinite`;
+    }
+  }
+
+  // ── UPDATE NOW PLAYING ──
+  function updateNowPlaying(data) {
+    const now = nowMinutes();
+    const eventStart = toMinutes(CONFIG.EVENT_START);
+    const eventEnd   = toMinutes(CONFIG.EVENT_END);
+    let current = null;
+    let next = null;
+
+    for (const item of data) {
+      const s = toMinutes(item.start);
+      const e = toMinutes(item.end);
+      if (now >= s && now < e) { current = item; }
+      else if (now < s && !next) { next = item; }
+    }
+
+    const titleEl = document.getElementById('now-title');
+    const badgeEl = document.getElementById('now-time-badge');
+    const fillEl  = document.getElementById('progress-fill');
+
+    // イベント時間前
+    if (now < eventStart) {
+      titleEl.innerHTML = `<span style="font-size:0.7em;color:var(--text-muted)">開始まで</span><br>${CONFIG.EVENT_START} START`;
+      badgeEl.textContent = `本日 ${CONFIG.EVENT_START} ─ ${CONFIG.EVENT_END}`;
+      fillEl.style.width = '0%';
+      return;
+    }
+
+    // イベント時間後
+    if (now >= eventEnd) {
+      titleEl.textContent = 'THANK YOU!';
+      badgeEl.textContent = '本日のプログラムは終了しました';
+      fillEl.style.width = '100%';
+      return;
+    }
+
+    if (current) {
+      if (current.stage === 'FREE') {
+        titleEl.innerHTML = 'ただいま、<br>ステージ解放中';
+        badgeEl.textContent = '飛び入り出演大歓迎！どなたでも参加いただけます。';
+      } else {
+        titleEl.textContent = current.title;
+        badgeEl.textContent = `${current.start} ─ ${current.end}`;
+      }
+      const s = toMinutes(current.start);
+      const e = toMinutes(current.end);
+      const pct = Math.max(0, Math.min(100, ((now - s) / (e - s)) * 100));
+      fillEl.style.width = pct + '%';
+    } else if (next) {
+      titleEl.textContent = `次：${next.title}`;
+      badgeEl.textContent = `開始 ${next.start}`;
+      fillEl.style.width = '0%';
+    }
+  }
+
+  // ── CLOCK ──
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+  }
+
+  // ── TICKER ──
+  function buildTicker(data) {
+    const track = document.getElementById('ticker-track');
+    const items = data.filter(d => d.stage !== 'ーー')
+      .map(d => `<span class="ticker-item">${d.start} ${d.title}</span>`)
+      .join('');
+    track.innerHTML = items + items; // duplicate for loop
+  }
+
+  // ── MAIN ──
+  async function init() {
+    timetableData = await fetchData();
+    renderTimetable(timetableData);
+    updateNowPlaying(timetableData);
+    buildTicker(timetableData);
+  }
+
+  function tick() {
+    updateClock();
+    updateNowPlaying(timetableData);
+    renderTimetable(timetableData);
+  }
+
+  init();
+  setInterval(tick, 10000);
+  setInterval(init, CONFIG.REFRESH_INTERVAL);
+  setInterval(updateClock, 1000);
+</script>
+</body>
+</html>

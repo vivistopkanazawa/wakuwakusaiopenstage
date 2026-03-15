@@ -337,12 +337,21 @@
       flex: 1;
       overflow: hidden;
       position: relative;
+      /* 上下フェードアウト */
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%);
     }
 
     #timetable {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      /* JSでanimationを付与 */
+    }
+
+    @keyframes scroll-up {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(var(--scroll-dist)); }
     }
 
     .tt-row {
@@ -448,15 +457,7 @@
     }
     .tt-row.active .now-indicator { display: flex; }
 
-    /* SCROLLING TIMETABLE */
-    #timetable-scroll {
-      animation: scroll-up 60s linear infinite;
-    }
-
-    @keyframes scroll-up {
-      0%   { transform: translateY(0); }
-      100% { transform: translateY(-50%); }
-    }
+    /* SCROLLING TIMETABLE — handled via JS + @keyframes scroll-up above */
 
     /* ── CONFIG ERROR ── */
     #config-notice {
@@ -741,14 +742,17 @@
   }
 
   // ── RENDER TIMETABLE ──
+  let scrollRAF = null;
+
   function renderTimetable(data) {
     const wrap = document.getElementById('timetable');
     const now = nowMinutes();
 
-    // duplicate for seamless scroll
-    const items = [...data, ...data];
+    // 行数が多い場合はシームレスループのため2倍複製、少ない場合はそのまま
+    const wrapH = document.getElementById('timetable-wrap').clientHeight || 900;
+    wrap.style.animation = 'none'; // リセット
 
-    wrap.innerHTML = items.map((item, i) => {
+    wrap.innerHTML = data.map((item, i) => {
       const s = toMinutes(item.start);
       const e = toMinutes(item.end);
       const isActive = now >= s && now < e;
@@ -774,12 +778,23 @@
         </div>`;
     }).join('');
 
-    // setup scroll
-    const totalH = wrap.scrollHeight / 2;
-    const duration = totalH / CONFIG.SCROLL_SPEED;
-    if (CONFIG.SCROLL_SPEED > 0 && data.length > 6) {
+    // スクロール設定（行数に関わらず自動対応）
+    requestAnimationFrame(() => {
+      const singleH = wrap.scrollHeight; // 1セット分の高さ
+
+      if (singleH <= wrapH) {
+        // 全行が画面内に収まる → スクロール不要
+        wrap.style.animation = 'none';
+        return;
+      }
+
+      // 2倍に複製してシームレスループ
+      wrap.innerHTML += wrap.innerHTML;
+
+      const duration = singleH / CONFIG.SCROLL_SPEED; // 速度から時間を算出
+      wrap.style.setProperty('--scroll-dist', `-${singleH}px`);
       wrap.style.animation = `scroll-up ${duration}s linear infinite`;
-    }
+    });
   }
 
   // ── UPDATE NOW PLAYING ──

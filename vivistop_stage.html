@@ -345,7 +345,7 @@
     #timetable {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       /* JSでanimationを付与 */
     }
 
@@ -356,10 +356,10 @@
 
     .tt-row {
       display: grid;
-      grid-template-columns: 130px 1fr auto;
+      grid-template-columns: 150px 1fr auto;
       align-items: center;
-      gap: 20px;
-      padding: 18px 24px;
+      gap: 24px;
+      padding: 22px 28px;
       background: var(--bg-card);
       border-left: 4px solid transparent;
       border-radius: 2px;
@@ -395,7 +395,7 @@
 
     .tt-time {
       font-family: var(--font-display);
-      font-size: 30px;
+      font-size: 36px;
       letter-spacing: 0.04em;
       color: var(--text-muted);
       white-space: nowrap;
@@ -406,7 +406,7 @@
     .tt-content {}
 
     .tt-title {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 700;
       color: #fff;
       margin-bottom: 4px;
@@ -416,7 +416,7 @@
     }
 
     .tt-desc {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
@@ -620,7 +620,7 @@
     SHEET_ID: '1sUX2ODd4-o7qDHyRbPkEU5VAkjBEvkON4ZVwd0BpN0Q',
 
     // シート名（タブ名）
-    SHEET_NAME: 'Sheet1',
+    SHEET_NAME: 'timetable_template',
 
     // データ更新間隔（ミリ秒）
     REFRESH_INTERVAL: 60000,
@@ -634,11 +634,10 @@
 
     // フォールバックデータ（スプレッドシートが未設定の場合に使用）
     FALLBACK_DATA: [
-      { start: '13:00', end: '13:30', title: 'オープニングセレモニー', description: 'イベント開幕！スタッフによるオープニングトーク', stage: 'MAIN' },
-      { start: '13:30', end: '14:15', title: 'ワークショップ：電子工作入門', description: '初心者向けLEDアート制作体験', stage: 'WORKSHOP' },
-      { start: '14:15', end: '14:45', title: 'パフォーマンス：ダンスショー', description: '地域ユースグループによるダンスパフォーマンス', stage: 'MAIN' },
-      { start: '15:00', end: '15:30', title: 'トーク：テクノロジーと未来', description: 'ゲストスピーカーによる特別講演', stage: 'TALK' },
-      { start: '15:30', end: '16:00', title: 'ファイナルパフォーマンス', description: '全員参加のクロージングステージ', stage: 'MAIN' },
+      { start: '13:00', end: '13:15', title: 'こそあどセッション', description: 'イベント開幕！てつによるパフォーマンス', stage: 'MAIN' },
+      { start: '13:15', end: '13:30', title: 'すけっち＆やまちー& ??', description: 'ライブ！', stage: 'MAIN' },
+      { start: '14:00', end: '14:15', title: 'Q&K', description: 'VIVISTOPガールズグループによるパフォーマンス', stage: 'MAIN' },
+      { start: '16:00', end: '16:00', title: 'クロージング', description: '今日はありがとうございました！', stage: 'MAIN' },
     ]
   };
   // ══════════════════════════════════════════════
@@ -660,7 +659,7 @@
 
   // ── FETCH FROM GOOGLE SHEETS (public CSV export) ──
   async function fetchData() {
-    if (CONFIG.SHEET_ID === 'YOUR_SHEET_ID_HERE') {
+    if (CONFIG.SHEET_ID === '1sUX2ODd4-o7qDHyRbPkEU5VAkjBEvkON4ZVwd0BpN0Q') {
       document.getElementById('config-notice').style.display = 'block';
       return fillFreeSlots(CONFIG.FALLBACK_DATA);
     }
@@ -679,7 +678,7 @@
 
   function parseCSV(text) {
     const lines = text.trim().split('\n');
-    // skip header row
+    // ヘッダー行をスキップ、start/endがある行はすべて保持（titleが空でもOK）
     return lines.slice(1).map(line => {
       const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
       return {
@@ -689,17 +688,21 @@
         description: cols[3] || '',
         stage:       (cols[4] || '').toUpperCase(),
       };
-    }).filter(r => r.start && r.title);
+    }).filter(r => r.start && r.end); // titleが空でもstart/endがあれば保持
   }
 
-  // ── 空き時間を「？？」スロットで埋める ──
+  // ── 空き時間＋タイトル空行を「？？」スロットに変換 ──
   function fillFreeSlots(data) {
     const eventStart = toMinutes(CONFIG.EVENT_START);
     const eventEnd   = toMinutes(CONFIG.EVENT_END);
 
-    // イベント時間外のコマを除外し、時系列にソート
+    // イベント時間内の行をソート（タイトル空の行も含む）
     const sorted = data
-      .filter(d => toMinutes(d.start) >= eventStart && toMinutes(d.end) <= eventEnd)
+      .filter(d => {
+        const s = toMinutes(d.start);
+        const e = toMinutes(d.end);
+        return s >= eventStart && e <= eventEnd && s < e; // 同時刻（0分）の行は除外
+      })
       .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
     const result = [];
@@ -707,8 +710,10 @@
 
     for (const item of sorted) {
       const s = toMinutes(item.start);
+      const e = toMinutes(item.end);
+
+      // cursorより前に空きがあれば？？スロットを挿入
       if (s > cursor) {
-        // 空き時間を検出 → 解放スロットを挿入
         result.push({
           start:       minutesToStr(cursor),
           end:         minutesToStr(s),
@@ -717,8 +722,21 @@
           stage:       'FREE',
         });
       }
-      result.push(item);
-      cursor = toMinutes(item.end);
+
+      // タイトルが空の行 → ？？スロットとして扱う
+      if (!item.title) {
+        result.push({
+          start:       item.start,
+          end:         item.end,
+          title:       '？？',
+          description: '出演者募集中！',
+          stage:       'FREE',
+        });
+      } else {
+        result.push(item);
+      }
+
+      cursor = Math.max(cursor, e);
     }
 
     // 最後のコマ〜イベント終了まで空きがあれば
